@@ -83,6 +83,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </CurrencyProvider>
+        <Analytics />
       </body>
     </html>
   );
