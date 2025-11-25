@@ -6,11 +6,15 @@ import { GoldCalculator } from "@/components/GoldCalculator";
 import { getMetalPrice } from "@/lib/gold-api";
 
 export default async function Home() {
-  const goldData = await getMetalPrice('XAU', 'USD');
+  // Fetch both gold and silver data once to avoid duplicate API calls
+  const [goldData, silverData] = await Promise.all([
+    getMetalPrice('XAU', 'USD'),
+    getMetalPrice('XAG', 'USD'),
+  ]);
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Hero />
+      <Hero goldData={goldData} silverData={silverData} />
       <PriceChart />
 
       {/* Gold Calculator Section */}

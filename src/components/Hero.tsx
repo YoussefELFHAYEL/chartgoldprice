@@ -1,13 +1,25 @@
 import { getMetalPrice } from '@/lib/gold-api';
 import { PriceCard } from './PriceCard';
+import { GoldPriceResponse } from '@/types';
 
-export async function Hero() {
-    const [goldData, silverData] = await Promise.all([
-        getMetalPrice('XAU', 'USD'),
-        getMetalPrice('XAG', 'USD'),
-    ]);
+interface HeroProps {
+    goldData?: GoldPriceResponse | null;
+    silverData?: GoldPriceResponse | null;
+}
+
+export async function Hero({ goldData: providedGoldData, silverData: providedSilverData }: HeroProps = {}) {
+    // Use provided data if available, otherwise fetch
+    const [goldData, silverData] = providedGoldData !== undefined && providedSilverData !== undefined
+        ? [providedGoldData, providedSilverData]
+        : await Promise.all([
+            getMetalPrice('XAU', 'USD'),
+            getMetalPrice('XAG', 'USD'),
+        ]);
 
     // Log for debugging in production
+    if (!goldData) {
+        console.error('[Hero] Gold data failed to load');
+    }
     if (!silverData) {
         console.error('[Hero] Silver data failed to load');
     }
