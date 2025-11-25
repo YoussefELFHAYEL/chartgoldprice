@@ -8,8 +8,8 @@ interface HeroProps {
 }
 
 export async function Hero({ goldData: providedGoldData, silverData: providedSilverData }: HeroProps = {}) {
-    // Use provided data if available, otherwise fetch
-    const [goldData, silverData] = providedGoldData !== undefined && providedSilverData !== undefined
+    // Use provided data ONLY if both are available AND not null, otherwise fetch
+    const [goldData, silverData] = (providedGoldData && providedSilverData)
         ? [providedGoldData, providedSilverData]
         : await Promise.all([
             getMetalPrice('XAU', 'USD'),
