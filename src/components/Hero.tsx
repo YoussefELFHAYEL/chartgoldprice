@@ -2,8 +2,15 @@ import { getMetalPrice } from '@/lib/gold-api';
 import { PriceCard } from './PriceCard';
 
 export async function Hero() {
-    const goldData = await getMetalPrice('XAU', 'USD');
-    const silverData = await getMetalPrice('XAG', 'USD');
+    const [goldData, silverData] = await Promise.all([
+        getMetalPrice('XAU', 'USD'),
+        getMetalPrice('XAG', 'USD'),
+    ]);
+
+    // Log for debugging in production
+    if (!silverData) {
+        console.error('[Hero] Silver data failed to load');
+    }
 
     return (
         <section className="relative overflow-hidden py-12 md:py-20">

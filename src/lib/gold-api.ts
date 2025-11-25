@@ -13,25 +13,33 @@ async function fetchMetalPrice(symbol: 'XAU' | 'XAG', currency: 'USD' = 'USD'): 
                 'x-access-token': API_KEY,
                 'Content-Type': 'application/json',
             },
+            next: { revalidate: 28800 } // 8 hours
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[GoldAPI] Error ${response.status} for ${symbol}:`, errorText);
             throw new Error(`API Error: ${response.status} ${response.statusText}`);
         }
 
         const data: GoldPriceResponse = await response.json();
+        console.log(`[GoldAPI] Successfully fetched ${symbol}:`, data.price);
         return data;
     } catch (error) {
-        console.error('[GoldAPI] Fetch failed:', error);
+        console.error(`[GoldAPI] Fetch failed for ${symbol}:`, error);
         return null;
     }
 }
 
 export const getMetalPrice = async (symbol: 'XAU' | 'XAG', currency: 'USD' = 'USD') => {
+    // Each symbol gets its own cache key
     const getCachedPrice = unstable_cache(
         async () => fetchMetalPrice(symbol, currency),
-        [`price-${symbol}-${currency}`],
-        { revalidate: 28800 } // 8 hours in seconds
+        [`metal-price-${symbol}-${currency}`], // Unique cache key per symbol
+        {
+            revalidate: 28800, // 8 hours in seconds
+            tags: [`price-${symbol}`] // Tag for cache invalidation
+        }
     );
 
     return getCachedPrice();
