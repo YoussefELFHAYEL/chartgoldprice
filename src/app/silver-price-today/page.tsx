@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { Hero } from '@/components/Hero';
 import { PriceChart } from '@/components/PriceChart';
 import { NewsSection } from '@/components/NewsSection';
+import { getMetalPrice } from '@/lib/gold-api';
 
 export const metadata: Metadata = {
     title: 'Silver Price Today | Live Silver Rates in USD, EUR, GBP',
@@ -9,7 +10,13 @@ export const metadata: Metadata = {
     keywords: ['silver price today', 'silver rate today', 'today silver price', 'live silver price', 'current silver price'],
 };
 
-export default function SilverPriceTodayPage() {
+export default async function SilverPriceTodayPage() {
+    // Fetch both gold and silver data to avoid duplicate API calls
+    const [goldData, silverData] = await Promise.all([
+        getMetalPrice('XAU', 'USD'),
+        getMetalPrice('XAG', 'USD'),
+    ]);
+
     return (
         <div className="flex flex-col min-h-screen">
             <section className="py-12 bg-zinc-900/50">
@@ -24,7 +31,7 @@ export default function SilverPriceTodayPage() {
                 </div>
             </section>
 
-            <Hero />
+            <Hero goldData={goldData} silverData={silverData} />
             <PriceChart />
 
             <section className="py-12 bg-black">
