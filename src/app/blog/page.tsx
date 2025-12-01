@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { BookOpen, TrendingUp, Calendar } from 'lucide-react';
+import { type SanityDocument } from "next-sanity";
+import { client } from "@/sanity/client";
 
 export const metadata: Metadata = {
     title: 'Gold & Silver Market Blog | Price Analysis & Investment Insights',
@@ -8,52 +10,26 @@ export const metadata: Metadata = {
     keywords: ['gold blog', 'silver blog', 'precious metals blog', 'gold investment', 'silver investment', 'gold market analysis'],
 };
 
-const blogPosts = [
-    {
-        title: 'Gold Price Forecast 2025: What Experts Predict',
-        excerpt: 'Explore expert predictions for gold prices in 2025 based on economic indicators, central bank policies, and global market trends.',
-        date: '2024-12-15',
-        category: 'Market Analysis',
-        slug: 'gold-price-forecast-2025',
-    },
-    {
-        title: 'How to Calculate Gold Value: Complete Guide',
-        excerpt: 'Learn how to accurately calculate the value of your gold jewelry or bullion based on weight, purity, and current market prices.',
-        date: '2024-12-10',
-        category: 'Education',
-        slug: 'how-to-calculate-gold-value',
-    },
-    {
-        title: 'Gold vs Silver: Which Precious Metal to Invest In?',
-        excerpt: 'Compare gold and silver as investment options. Understand the risks, returns, and market dynamics of each precious metal.',
-        date: '2024-12-05',
-        category: 'Investment',
-        slug: 'gold-vs-silver-investment',
-    },
-    {
-        title: 'Understanding Gold Karats: 24K, 22K, 18K, 14K Explained',
-        excerpt: 'A comprehensive guide to gold purity levels, what karat means, and how to choose the right purity for your needs.',
-        date: '2024-11-28',
-        category: 'Education',
-        slug: 'gold-karats-explained',
-    },
-    {
-        title: 'How Central Banks Influence Gold Prices',
-        excerpt: 'Discover how central bank policies, interest rates, and gold reserves impact the price of gold in global markets.',
-        date: '2024-11-20',
-        category: 'Market Analysis',
-        slug: 'central-banks-gold-prices',
-    },
-    {
-        title: 'Best Times to Buy Gold: Seasonal Trends Analysis',
-        excerpt: 'Analyze seasonal patterns in gold prices and discover the historically best times of year to purchase gold.',
-        date: '2024-11-15',
-        category: 'Investment',
-        slug: 'best-times-to-buy-gold',
-    },
-];
+const POSTS_QUERY = `*[
+  _type == "post"
+  && defined(slug.current)
+]|order(publishedAt desc)[0...12]{_id, title, slug, publishedAt, body}`;
 
-export default function BlogPage() {
+const options = { next: { revalidate: 30 } };
+
+async function getBlogPosts() {
+    try {
+        const posts = await client.fetch<SanityDocument[]>(POSTS_QUERY, {}, options);
+        return posts;
+    } catch (error) {
+        console.error("Error fetching posts from Sanity:", error);
+        return [];
+    }
+}
+
+export default async function BlogPage() {
+    const blogPosts = await getBlogPosts();
+
     return (
         <div className="flex flex-col min-h-screen">
             <section className="py-12 bg-zinc-900/50">
@@ -72,39 +48,53 @@ export default function BlogPage() {
 
             <section className="py-12 bg-black">
                 <div className="container mx-auto px-4">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                        {blogPosts.map((post, index) => (
-                            <article
-                                key={index}
-                                className="border border-white/10 rounded-lg overflow-hidden hover:border-gold-500/30 transition-all group"
-                            >
-                                <div className="p-6">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-xs font-medium px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20">
-                                            {post.category}
-                                        </span>
-                                        <div className="flex items-center gap-1 text-xs text-zinc-500">
-                                            <Calendar className="h-3 w-3" />
-                                            {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </div>
-                                    </div>
-                                    <h2 className="text-xl font-bold text-white mb-3 group-hover:text-gold-400 transition-colors">
-                                        {post.title}
-                                    </h2>
-                                    <p className="text-zinc-400 text-sm mb-4 line-clamp-3">
-                                        {post.excerpt}
-                                    </p>
-                                    <Link
-                                        href={`/blog/${post.slug}`}
-                                        className="inline-flex items-center gap-2 text-gold-400 hover:text-gold-300 text-sm font-medium transition-colors"
+                    {blogPosts.length === 0 ? (
+                        <div className="text-center text-zinc-400">
+                            <p className="text-lg">No blog posts yet. Create your first post in the Sanity Studio!</p>
+                            <p className="text-sm mt-2">Run <code className="bg-zinc-800 px-2 py-1 rounded">npm run dev</code> in the studio-cgp directory to access the Studio.</p>
+                        </div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                            {blogPosts.map((post) => {
+                                // Extract first paragraph as excerpt
+                                const excerpt = Array.isArray(post.body) && post.body.length > 0
+                                    ? post.body[0]?.children?.[0]?.text || 'No preview available'
+                                    : 'No preview available';
+
+                                return (
+                                    <article
+                                        key={post._id}
+                                        className="border border-white/10 rounded-lg overflow-hidden hover:border-gold-500/30 transition-all group"
                                     >
-                                        Read More
-                                        <TrendingUp className="h-4 w-4" />
-                                    </Link>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
+                                        <div className="p-6">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className="text-xs font-medium px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20">
+                                                    Article
+                                                </span>
+                                                <div className="flex items-center gap-1 text-xs text-zinc-500">
+                                                    <Calendar className="h-3 w-3" />
+                                                    {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </div>
+                                            </div>
+                                            <h2 className="text-xl font-bold text-white mb-3 group-hover:text-gold-400 transition-colors">
+                                                {post.title}
+                                            </h2>
+                                            <p className="text-zinc-400 text-sm mb-4 line-clamp-3">
+                                                {excerpt}
+                                            </p>
+                                            <Link
+                                                href={`/blog/${post.slug.current}`}
+                                                className="inline-flex items-center gap-2 text-gold-400 hover:text-gold-300 text-sm font-medium transition-colors"
+                                            >
+                                                Read More
+                                                <TrendingUp className="h-4 w-4" />
+                                            </Link>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </section>
 
