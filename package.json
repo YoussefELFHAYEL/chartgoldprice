@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@sanity/image-url": "^2.0.1",
+    "@tailwindcss/typography": "^0.5.16",
     "@vercel/analytics": "^1.5.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
